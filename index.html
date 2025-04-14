@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Overlay App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #camera-container {
+      position: relative;
+      width: 98vw;
+      height: 80vh;
+      overflow: hidden;
+    }
+
+    video, #overlay-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #controls {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button, input[type="file"] {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background: #222;
+      color: white;
+    }
+
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="overlay-img" src="" alt="Overlay" />
+  </div>
+
+  <div id="controls">
+    <input type="file" accept="image/png" id="upload">
+    <button onclick="capture()">Capture 1</button>
+    <a id="download" download="photo.png" style="display: none;">Download Photo</a>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const video = document.getElementById('camera');
+    const overlayImg = document.getElementById('overlay-img');
+    const canvas = document.getElementById('canvas');
+    const upload = document.getElementById('upload');
+    const download = document.getElementById('download');
+
+    // Start camera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Camera access denied: " + err));
+
+    // Upload overlay drawing
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        overlayImg.src = URL.createObjectURL(file);
+        overlayImg.onload = () => URL.revokeObjectURL(overlayImg.src);
+      }
+    });
+
+    // Capture photo
+    function capture() {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, width, height);
+
+      if (overlayImg.src && overlayImg.complete) {
+        ctx.drawImage(overlayImg, 0, 0, width, height);
+      }
+
+      const dataUrl = canvas.toDataURL('image/png');
+      download.href = dataUrl;
+      download.style.display = 'inline';
+      download.click();
+    }
+  </script>
+
+</body>
+</html>
